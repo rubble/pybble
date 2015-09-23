@@ -1,11 +1,13 @@
 from setuptools import setup
 
 setup(name='pybble',
-      version='0.1',
-      description='A python API to the Rubble programming language via the REST API',
+      version='0.2',
+      description="""A python API to the Rubble programming
+                     language over HTTP using the Rubble REST API.""",
       url='http://github.com/emlync/pybble',
       author='Emlyn Clay',
       author_email='emlyn@viditeck.com',
       license='MIT',
       packages=['pybble'],
-      zip_safe=False)
+      install_requires=["requests"],
+      )
