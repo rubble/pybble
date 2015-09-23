@@ -1,0 +1,8 @@
+setup.py
+pybble/__init__.py
+pybble.egg-info/PKG-INFO
+pybble.egg-info/SOURCES.txt
+pybble.egg-info/dependency_links.txt
+pybble.egg-info/not-zip-safe
+pybble.egg-info/pbr.json
+pybble.egg-info/top_level.txt

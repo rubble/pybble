@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: pybble
+Version: 0.1
+Summary: A python API to the Rubble programming language via the REST API
+Home-page: http://github.com/emlync/pybble
+Author: Emlyn Clay
+Author-email: emlyn@viditeck.com
+License: MIT
+Description: UNKNOWN
+Platform: UNKNOWN
