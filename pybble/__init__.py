@@ -9,7 +9,21 @@ import datetime
 import requests
 import sys
 from urllib.parse import urljoin
-from pybble import setup
+
+setup_params = {
+  'name': 'pybble',
+  'packages': ['pybble'],
+  'version': '0.1.1',
+  'description': """A python API to the Rubble programming
+                 language over HTTP using the Rubble REST API.""",
+  'url': 'https: //github.com/viditeck/pybble',
+  'download_url': 'https://github.com/viditeck/pybble/tarball/0.1.1',
+  'keywords': ['rubble', 'logic language', 'api'],
+  'author': 'Emlyn Clay',
+  'author_email': 'emlyn@viditeck.com',
+  'license': 'MIT',
+  'install_requires': ["requests"]
+}
 
 
 class RubbleREST:
@@ -65,7 +79,7 @@ class RubbleREST:
             "base_url": "https://rubble2.labs.viditeck.com/",
             "verify_SSL": True,
             "headers": {
-                "user-agent": "pybble {}".format(setup.version),
+                "user-agent": "pybble {}".format(setup_params['version']),
                 "content-type": "application/json",
             }
         }
@@ -96,7 +110,7 @@ class RubbleREST:
         """
         return int(datetime_obj.strftime("%s")) * 1000
 
-    def call(self, terms, **kwargs):
+    def call(self, terms, pid, **kwargs):
         """Synchronously sends a message consisting of Herbrand terms to
         a designated channel.
 
@@ -142,7 +156,7 @@ class RubbleREST:
         # create the payload and update with kwargs, channel is represented
         # by the string pid(N) where N is the numeric process ID
         params = {
-            'channel': 'pid(%s)' % self.config['pid']
+            'channel': 'pid(%s)' % pid
         }
 
         # URL arguement uses hyphens, but hyphens cannot be used in
@@ -178,7 +192,7 @@ class RubbleREST:
                   file=sys.stderr)
             return request
 
-    def send(self, terms, **kwargs):
+    def send(self, terms, pid, **kwargs):
         """Sends a message consisting of JSON-encoded Herbrand terms to the
         designated channel.
 
@@ -212,7 +226,7 @@ class RubbleREST:
         # create the payload and update with kwargs, channel is represented
         # by the string pid(N) where N is the numeric process ID
         params = {
-            'channel': 'pid(%s)' % self.config['pid']
+            'channel': 'pid(%s)' % pid
         }
 
         # URL arguement uses hyphens, but hyphens cannot be used in
