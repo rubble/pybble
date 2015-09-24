@@ -6,6 +6,7 @@
 
 # imports
 import requests, json, datetime
+import sys
 from urllib.parse import urlparse, urljoin
 
 
@@ -101,9 +102,9 @@ class RubbleREST:
         Parameters
         ----------
 
-        terms: str or list
+        terms: list or dict
             Rubble facts or more generally Herbrand terms. See appendix A in
-            module docstring.
+            class docstring.
 
         channel: str, optional
             Identifies the recipient process by it's registered
@@ -122,10 +123,10 @@ class RubbleREST:
 
         Returns
         -------
-        response: dict
-            A dict converted from a JSON object. {"output":[…]} on success, or
-            {"error":"MESSAGE"} if an error occurred.
-
+        response: dict or request
+            A dict converted from the JSON object. {"output":[…]} on success, or
+            {"error":"MESSAGE"} if an error occurred. The request will be returned
+            if there is an error actually making the request
 
         If the rules triggered by this message results in new outgoing
         messages to the pseudo-channel default, the terms in these
@@ -160,20 +161,21 @@ class RubbleREST:
 
         params = params.update(kwargs)
 
-        # check the format of the terms, if it's a list then
-        # cast it to a string
-        if type(terms) is list:
-            terms = str(list)
-
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'call')
 
         request = requests.post(url,
-                      data=terms,
+                      json=terms,
                       params=params,
                       **self.default_request_kwargs)
 
-        return request.json()
+        if request.ok:
+            return request.json()
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                               request.reason),
+                  file=sys.stderr)
+            return request
 
     def send(self, terms, **kwargs):
         """Sends a message consisting of JSON-encoded Herbrand terms to the
@@ -238,13 +240,19 @@ class RubbleREST:
         url = urljoin(self.config['api_url'], 'send')
 
         request = requests.post(url,
-                                 json=terms,
-                                 params=params,
-                                 **self.default_request_kwargs)
+                                json=terms,
+                                params=params,
+                                **self.default_request_kwargs)
 
-        return request.json()
+        if request.ok:
+            return request.json()
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                               request.reason),
+                  file=sys.stderr)
+            return request
 
-    def domaininfo(self):
+    def domain_info(self):
         """Returns a JSON object that contains some information about the
         client's credentials.
 
@@ -257,7 +265,14 @@ class RubbleREST:
         """
         url = urljoin(self.config['api_url'], 'domaininfo')
         request = requests.get(url, **self.default_request_kwargs)
-        return request.json()
+
+        if request.ok:
+            return request.json()
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                               request.reason),
+                  file=sys.stderr)
+            return request
 
     # todo: format to numpy docstring
     def get_process(self, pid, prettyprint=True, **kwargs):
@@ -402,11 +417,17 @@ class RubbleREST:
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'process')
 
-        request = requests.post(url,
+        request = requests.get(url,
                                 params=params,
                                 **self.default_request_kwargs)
 
-        return request.json()
+        if request.ok:
+            return request.json()
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                               request.reason),
+                  file=sys.stderr)
+            return request
 
     def create_process(self, rulesref, **kwargs):
         """
@@ -471,21 +492,27 @@ class RubbleREST:
 
         """
 
-        params = {
+        payload = {
             'rulesref': rulesref,
         }
 
         # add kwargs as params to the payload
-        params = params.update(**kwargs)
+        payload.update(kwargs)
 
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'processcreate')
 
         request = requests.post(url,
-                                params=params,
+                                json=payload,
                                 **self.default_request_kwargs)
 
-        request.json()
+        if request.ok:
+            return request.json()
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                        request.reason),
+                  file=sys.stderr)
+            return request
 
     # todo: format docstring to numpy
     def update_process(self, rulesref, pid, **kwargs):
@@ -530,22 +557,28 @@ class RubbleREST:
 
         """
 
-        params = {
+        payload = {
             "pid": str(pid),
             "rulesref": rulesref,
         }
 
         # add kwargs as params to the payload
-        params = params.update(**kwargs)
+        payload.update(**kwargs)
 
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'processupdate')
 
         request = requests.post(url,
-                                params=params,
+                                json=payload,
                                 **self.default_request_kwargs)
 
-        return request.json()
+        if request.ok:
+            return request.json()
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                        request.reason),
+                  file=sys.stderr)
+            return request
 
     # todo: format to numpy conventions
     def delete_process(self, pid):
@@ -570,7 +603,14 @@ class RubbleREST:
         request = requests.delete(url,
                                   params={'pid': pid},
                                   **self.default_request_kwargs)
-        request.json()
+
+        if request.ok:
+            return request.json()
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                        request.reason),
+                  file=sys.stderr)
+            return request
 
     # todo: format to numpy conventions
     def list_processes(self):
@@ -608,7 +648,14 @@ class RubbleREST:
         """
         url = urljoin(self.config['api_url'], 'processlist')
         request = requests.get(url, **self.default_request_kwargs)
-        return request.json()
+
+        if request.ok:
+            return request.json()
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                        request.reason),
+                  file=sys.stderr)
+            return request
 
     # todo: format to numpy conventions
     def update_channel(self, channel, pid):
@@ -637,18 +684,27 @@ class RubbleREST:
         entry, specify the process ID "0".
         """
 
-        params = {
+        payload = {
             'channel': channel,
             'pid': str(pid),
         }
 
         url = urljoin(self.config['api_url'], 'chanupdate')
 
-        request = requests.post(url, params=params, **self.default_request_kwargs)
-        return request.json()
+        request = requests.post(url,
+                                params=payload,
+                                **self.default_request_kwargs)
+
+        if request.ok:
+            return request.json()
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                        request.reason),
+                  file=sys.stderr)
+            return request
 
     # todo: format according to numpy docstring conventions
-    def list_channels(self):
+    def list_channels(self, **kwargs):
         """Retrieves the list of registered channel aliases.
 
         Keyword
@@ -678,3 +734,15 @@ class RubbleREST:
 
         :return:
         """
+        params = {}
+        params.update(kwargs)
+        url = urljoin(self.config['api_url'], 'chanlist')
+        request = requests.get(url, params=params, **self.default_request_kwargs)
+
+        if request.ok:
+            return request.json()
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                        request.reason),
+                  file=sys.stderr)
+            return request
