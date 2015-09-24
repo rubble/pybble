@@ -61,7 +61,6 @@ class RubbleREST:
         # onto the defaults
         self.config = {
             "base_url": "https://rubble2.labs.viditeck.com/",
-            "pid": 1408,
             "verify_SSL": True,
             "headers": {
                 "user-agent": "pybble",
