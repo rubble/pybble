@@ -5,9 +5,11 @@
 """
 
 # imports
-import requests, json, datetime
+import datetime
+import requests
 import sys
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urljoin
+from pybble import setup
 
 
 class RubbleREST:
@@ -63,7 +65,7 @@ class RubbleREST:
             "base_url": "https://rubble2.labs.viditeck.com/",
             "verify_SSL": True,
             "headers": {
-                "user-agent": "pybble",
+                "user-agent": "pybble {}".format(setup.version),
                 "content-type": "application/json",
             }
         }
