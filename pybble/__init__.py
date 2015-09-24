@@ -8,9 +8,9 @@
 import requests, json, datetime
 from urllib.parse import urlparse, urljoin
 
+
 class RubbleREST:
-    """
-    The Rubble web services use HTTP Basic authentication for
+    """The Rubble web services use HTTP Basic authentication for
     everything except for the URL paths /rubble/service/cluster-probe
     and /rubble/webdav/www/, which may be accessed without
     authentication. The cluster-probe service is intended for calls
@@ -27,6 +27,28 @@ class RubbleREST:
     are also master credentials used for bootstrapping and for
     intra-cluster communication.  A class to talk to the rubble
     service.
+
+    Appendix A
+    ----------
+
+    Rubble facts can  either be set as a nested list otherwise known as
+    JSON-encoded Rubble facts:
+
+        [["completed","task23"],
+         ["device_category","1","Mobile device"],
+         ["leap_year"],
+         "daylight_saving",
+         ["f",["g","h"],["i","j","k"]]
+
+    Or as plain Rubble rules:
+
+        completed(task23);
+        device_category(1,"Mobile device");
+        leap_year;
+        daylight_saving;
+        f(g(h),i(j,k));
+
+    See http://clip.dia.fi.upm.es/~vocal/public_info/seminar_notes/node32.html
     """
 
     def __init__(self, auth, config=False):
@@ -61,44 +83,50 @@ class RubbleREST:
         self.config['api_url'] = urljoin(self.config['base_url'], "rubble/service/")
 
     @staticmethod
-    def now(self):
+    def now():
+        """Get now as microseconds since the UNIX epoch.
         """
-        Get now as a microseconds since the UNIX epoch.
-        """
-
         return int(datetime.datetime.now().strftime("%s")) * 1000
 
-    def call(self, terms, format="text", **kwargs):
+    @staticmethod
+    def datetime_to_epoch(datetime_obj):
+        """Get now as microseconds since the UNIX epoch.
         """
-        Arguments
+        return int(datetime_obj.strftime("%s")) * 1000
+
+
+    def call(self, terms, **kwargs):
+        """Synchronously sends a message consisting of Herbrand terms to
+        a designated channel.
+
+        Parameters
         ----------
 
-        terms
+        terms: str or list
+            Rubble facts or more generally Herbrand terms. See appendix A in
+            module docstring.
 
-            Rubble facts or more generally Herbrand terms, that Rubble
-            should evaluate. These can either be set as a nested list
-            otherwise known as JSON-encoded Rubble facts:
+        channel: str, optional
+            Identifies the recipient process by it's registered
+            channel name
 
-                [["completed","task23"],
-                 ["device_category","1","Mobile device"],
-                 ["leap_year"],
-                 "daylight_saving",
-                 ["f",["g","h"],["i","j","k"]]
+        pid: int, optional
+            Identifies the recipient process by it's process ID.
 
-            Or as plain Rubble rules:
+        wrap_input_from: str, optional
+            Identifies the sender to the receiving process. If supplied, every
+            term X in the message payload is wrapped as input(FROM,X). This is
+            useful if the receiving process has rules with conditions on
+            input/2 terms. It is mandatory to use this when doing cross-domain
+            messaging, for security reasons. The pseudo-channel default is
+            always an acceptable value for FROM.
 
-                completed(task23);
-                device_category(1,"Mobile device");
-                leap_year;
-                daylight_saving;
-                f(g(h),i(j,k));
+        Returns
+        -------
+        response: dict
+            A dict converted from a JSON object. {"output":[…]} on success, or
+            {"error":"MESSAGE"} if an error occurred.
 
-            See http://clip.dia.fi.upm.es/~vocal/public_info/seminar_notes/node32.html
-
-        Synchronously sends a message consisting of Herbrand terms to
-        the designated channel. The response is a JSON Object
-        {"output":[…]} on success, or {"error":"MESSAGE"} if an error
-        occurred.
 
         If the rules triggered by this message results in new outgoing
         messages to the pseudo-channel default, the terms in these
@@ -108,37 +136,67 @@ class RubbleREST:
         The message is not enqueued, but rather bypasses any pending
         enqueued messages and is delivered in the same transaction as
         the request.
-
-        The content-type of the request body can be either
-        application/json or text/plain. In the latter case the terms
-        are encoded in Rubble source-code syntax instead of JSON. For
-        a description of the JSON Rubble format, see Appendix A,
-        JSON-encoded Rubble facts.
-
         """
 
-        # create the payload and update with kwargs
+        # create the payload and update with kwargs, channel is represented
+        # by the string pid(N) where N is the numeric process ID
         payload = {
             'channel': 'pid(%s)' % self.config['pid']
         }
 
-        payload = payload.update(kwargs)
+        # URL arguement uses hyphens, but hyphens cannot be used in
+        # dict keys.
+        if 'wrap_input_from' in kwargs:
+            payload['wrap-input-from'] = kwargs['wrap_input_from']
+            del kwargs['wrap_input_from']
         
         if 'pid' in kwargs:
-            payload['channel'] = 'pid(%d)' % kwargs['channel']
+            payload['channel'] = 'pid(%d)' % kwargs['pid']
+            del kwargs['pid']
+
+        if 'pid' and 'channel' in kwargs:
+            raise ValueError("""Ambiguous. Either use either a PID or a channel
+            alias to select the channel to call to. Not both.
+            """)
+
+        payload = payload.update(kwargs)
+
+        # check the format of the terms, if it's a list then
+        # cast it to a string
+        if type(terms) is list:
+            terms = str(list)
 
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'call')
 
-        # todo: verify is currently false because rubble 2 doens't have a valid cert
-        return requests.post(url, json=terms, params=payload, **self.default_request_kwargs)
+        return requests.post(url,
+                             data=terms,
+                             params=payload,
+                             **self.default_request_kwargs)
 
     def send(self, terms, **kwargs):
-        """
-        Sends a message consisting of JSON-encoded Herbrand terms to the
-        designated channel. The content-type of the request body must be
-        application/json. For a description of the JSON Rubble format, see
-        Appendix A, JSON-encoded Rubble facts.
+        """Sends a message consisting of JSON-encoded Herbrand terms to the
+        designated channel.
+
+        Parameters
+        ----------
+
+        terms: str or list
+            Rubble facts or more generally Herbrand terms.  See appendix A in
+            module docstring.
+
+        channel: str, optional
+            Identifies the recipient process by it's registered
+            channel name
+
+        pid: int, optional
+            Identifies the recipient process by it's process ID.
+
+        when: datetime, optional
+            When to deliver the message.
+
+        For a description of the JSON Rubble format, see Appendix A,
+        JSON-encoded Rubble facts.
 
         The response is an empty JSON object {} on success, or
         {"error":"MESSAGE"} if an error occurred. Note: success only
@@ -147,24 +205,37 @@ class RubbleREST:
         after the API response has been committed.
         """
 
-        # create the payload and only add params if they are included
+        # create the payload and update with kwargs, channel is represented
+        # by the string pid(N) where N is the numeric process ID
         payload = {
             'channel': 'pid(%s)' % self.config['pid']
         }
 
+        # URL arguement uses hyphens, but hyphens cannot be used in
+        # dict keys.
+        if 'wrap_input_from' in kwargs:
+            payload['wrap-input-from'] = kwargs['wrap_input_from']
+            del kwargs['wrap_input_from']
+
+        # Expect a datetime object, convert it to milliseconds
+        # since epoch
         if 'when' in kwargs:
+            if type(kwargs['when']) is not datetime.datetime:
+                raise ValueError("""The keyword 'when' must be a datetime
+                object.
+                """)
+
+            kwargs['when'] = self.datetime_to_epoch(kwargs['when'])
             payload['when'] = kwargs['when']
         
         if 'pid' in kwargs:
             payload['channel'] = 'pid(%d)' % kwargs['channel']
 
-        if 'wrap_input_from' in kwargs:
-            payload['wrap-input-from'] = kwargs['wrap_input_from']
+        payload = payload.update(kwargs)
 
         # join the api url to the method call
-        url = urljoin(self.config['api_url'], 'call')
+        url = urljoin(self.config['api_url'], 'send')
 
-        # todo: verify is currently false because rubble 2 doens't have a valid cert
         return requests.post(url, json=terms, params=payload, **self.default_request_kwargs)
 
     def domaininfo(self):
@@ -551,3 +622,26 @@ class RubbleREST:
 
         return requests.post(url, params=params, **self.default_request_kwargs)
 
+    def list_channels(self):
+        """Retrieves the list of registered channel aliases.
+
+        Keyword
+
+        includeGlobal=INCLUDEGLOBAL (optional)
+        Set this to 1 to include globally scoped channel aliases, common for all domains. The default value is 0.
+
+        domain=DOMAIN (optional)
+        Set this to * to list only globally scoped channel aliases. Any other value of DOMAIN will be ignored.
+
+        skipItems=SKIPITEMS (optional)
+        Skip the first SKIPITEMS number of items when creating the list. The default value is 0. For pagination.
+
+        maxItems=MAXITEMS (optional)
+        The maximum number of items to return in the list. The default value is 2147483647 (231-1). For pagination.
+
+        The response is a JSON object: {"result":[…]}
+
+        Each element of the JSON array result is a JSON object: {…}
+
+        :return:
+        """
