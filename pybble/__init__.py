@@ -94,7 +94,6 @@ class RubbleREST:
         """
         return int(datetime_obj.strftime("%s")) * 1000
 
-
     def call(self, terms, **kwargs):
         """Synchronously sends a message consisting of Herbrand terms to
         a designated channel.
@@ -140,18 +139,18 @@ class RubbleREST:
 
         # create the payload and update with kwargs, channel is represented
         # by the string pid(N) where N is the numeric process ID
-        payload = {
+        params = {
             'channel': 'pid(%s)' % self.config['pid']
         }
 
         # URL arguement uses hyphens, but hyphens cannot be used in
         # dict keys.
         if 'wrap_input_from' in kwargs:
-            payload['wrap-input-from'] = kwargs['wrap_input_from']
+            params['wrap-input-from'] = kwargs['wrap_input_from']
             del kwargs['wrap_input_from']
         
         if 'pid' in kwargs:
-            payload['channel'] = 'pid(%d)' % kwargs['pid']
+            params['channel'] = 'pid(%d)' % kwargs['pid']
             del kwargs['pid']
 
         if 'pid' and 'channel' in kwargs:
@@ -159,7 +158,7 @@ class RubbleREST:
             alias to select the channel to call to. Not both.
             """)
 
-        payload = payload.update(kwargs)
+        params = params.update(kwargs)
 
         # check the format of the terms, if it's a list then
         # cast it to a string
@@ -169,10 +168,12 @@ class RubbleREST:
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'call')
 
-        return requests.post(url,
-                             data=terms,
-                             params=payload,
-                             **self.default_request_kwargs)
+        request = requests.post(url,
+                      data=terms,
+                      params=params,
+                      **self.default_request_kwargs)
+
+        return request.json()
 
     def send(self, terms, **kwargs):
         """Sends a message consisting of JSON-encoded Herbrand terms to the
@@ -207,14 +208,14 @@ class RubbleREST:
 
         # create the payload and update with kwargs, channel is represented
         # by the string pid(N) where N is the numeric process ID
-        payload = {
+        params = {
             'channel': 'pid(%s)' % self.config['pid']
         }
 
         # URL arguement uses hyphens, but hyphens cannot be used in
         # dict keys.
         if 'wrap_input_from' in kwargs:
-            payload['wrap-input-from'] = kwargs['wrap_input_from']
+            params['wrap-input-from'] = kwargs['wrap_input_from']
             del kwargs['wrap_input_from']
 
         # Expect a datetime object, convert it to milliseconds
@@ -226,17 +227,22 @@ class RubbleREST:
                 """)
 
             kwargs['when'] = self.datetime_to_epoch(kwargs['when'])
-            payload['when'] = kwargs['when']
+            params['when'] = kwargs['when']
         
         if 'pid' in kwargs:
-            payload['channel'] = 'pid(%d)' % kwargs['channel']
+            params['channel'] = 'pid(%d)' % kwargs['channel']
 
-        payload = payload.update(kwargs)
+        params = params.update(kwargs)
 
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'send')
 
-        return requests.post(url, json=terms, params=payload, **self.default_request_kwargs)
+        request = requests.post(url,
+                                 json=terms,
+                                 params=params,
+                                 **self.default_request_kwargs)
+
+        return request.json()
 
     def domaininfo(self):
         """Returns a JSON object that contains some information about the
@@ -250,9 +256,10 @@ class RubbleREST:
 
         """
         url = urljoin(self.config['api_url'], 'domaininfo')
+        request = requests.get(url, **self.default_request_kwargs)
+        return request.json()
 
-        return requests.get(url, **self.default_request_kwargs)
-
+    # todo: format to numpy docstring
     def get_process(self, pid, prettyprint=True, **kwargs):
         """
         Retrieves a process. The response is a JSON object: {"content":{…}} on
@@ -384,18 +391,22 @@ class RubbleREST:
         message queue.
 
         """
-        payload = {
+        params = {
             "pid": str(pid),
             "prettyprint": 1 if prettyprint else 0,
         }
 
         # add kwargs as params to the payload
-        payload = payload.update(kwargs)
+        params = params.update(kwargs)
 
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'process')
 
-        return requests.post(url, params=payload, **self.default_request_kwargs)
+        request = requests.post(url,
+                                params=params,
+                                **self.default_request_kwargs)
+
+        return request.json()
 
     def create_process(self, rulesref, **kwargs):
         """
@@ -460,18 +471,23 @@ class RubbleREST:
 
         """
 
-        payload = {
+        params = {
             'rulesref': rulesref,
         }
 
         # add kwargs as params to the payload
-        payload = payload.update(**kwargs)
+        params = params.update(**kwargs)
 
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'processcreate')
 
-        return requests.post(url, params=payload, **self.default_request_kwargs)
+        request = requests.post(url,
+                                params=params,
+                                **self.default_request_kwargs)
 
+        request.json()
+
+    # todo: format docstring to numpy
     def update_process(self, rulesref, pid, **kwargs):
         """
         Updates a Rubble process. The request body must have content-type
@@ -514,19 +530,24 @@ class RubbleREST:
 
         """
 
-        payload = {
+        params = {
             "pid": str(pid),
             "rulesref": rulesref,
         }
 
         # add kwargs as params to the payload
-        payload = payload.update(**kwargs)
+        params = params.update(**kwargs)
 
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'processupdate')
 
-        return requests.post(url, params=payload, **self.default_request_kwargs)
+        request = requests.post(url,
+                                params=params,
+                                **self.default_request_kwargs)
 
+        return request.json()
+
+    # todo: format to numpy conventions
     def delete_process(self, pid):
         """
         Deletes the process specified by the PID.
@@ -545,12 +566,13 @@ class RubbleREST:
             Note: the repository file that controls the process will not be
             deleted since it may be of use for other process instances.
         """
-
-        # join the api url to the method call
         url = urljoin(self.config['api_url'], 'process')
+        request = requests.delete(url,
+                                  params={'pid': pid},
+                                  **self.default_request_kwargs)
+        request.json()
 
-        return requests.delete(url, params={'pid': pid})
-
+    # todo: format to numpy conventions
     def list_processes(self):
         """
         Retrieves a list of process IDs and some associated metadata.
@@ -585,8 +607,10 @@ class RubbleREST:
         console.
         """
         url = urljoin(self.config['api_url'], 'processlist')
-        return requests.get(url, **self.default_request_kwargs)
+        request = requests.get(url, **self.default_request_kwargs)
+        return request.json()
 
+    # todo: format to numpy conventions
     def update_channel(self, channel, pid):
         """
         Updates the channel alias registry. This method handles both creation,
@@ -620,28 +644,37 @@ class RubbleREST:
 
         url = urljoin(self.config['api_url'], 'chanupdate')
 
-        return requests.post(url, params=params, **self.default_request_kwargs)
+        request = requests.post(url, params=params, **self.default_request_kwargs)
+        return request.json()
 
+    # todo: format according to numpy docstring conventions
     def list_channels(self):
         """Retrieves the list of registered channel aliases.
 
         Keyword
 
         includeGlobal=INCLUDEGLOBAL (optional)
-        Set this to 1 to include globally scoped channel aliases, common for all domains. The default value is 0.
+
+            Set this to 1 to include globally scoped channel aliases, common
+            for all domains. The default value is 0.
 
         domain=DOMAIN (optional)
-        Set this to * to list only globally scoped channel aliases. Any other value of DOMAIN will be ignored.
+
+            Set this to * to list only globally scoped channel aliases. Any
+            other value of DOMAIN will be ignored.
 
         skipItems=SKIPITEMS (optional)
-        Skip the first SKIPITEMS number of items when creating the list. The default value is 0. For pagination.
+
+            Skip the first SKIPITEMS number of items when creating the list.
+            The default value is 0. For pagination.
 
         maxItems=MAXITEMS (optional)
-        The maximum number of items to return in the list. The default value is 2147483647 (231-1). For pagination.
 
-        The response is a JSON object: {"result":[…]}
+            The maximum number of items to return in the list. The default
+            value is 2147483647 (231-1). For pagination.
 
-        Each element of the JSON array result is a JSON object: {…}
+        The response is a JSON object: {"result":[…]}. Each element of the JSON
+        array result is a JSON object: {…}
 
         :return:
         """
