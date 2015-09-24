@@ -1,3 +1,9 @@
+"""The python API to the Rubble programming language over REST
+
+.. moduleauthor:: Emlyn Clay <emlyn@viditeck.com>
+
+"""
+
 # imports
 import requests, json, datetime
 from urllib.parse import urlparse, urljoin
