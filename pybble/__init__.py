@@ -13,11 +13,11 @@ from urllib.parse import urljoin
 setup_params = {
   'name': 'pybble',
   'packages': ['pybble'],
-  'version': '0.1.2',
+  'version': '0.1.3',
   'description': """A python API to the Rubble programming
                  language over HTTP using the Rubble REST API.""",
   'url': 'https: //github.com/viditeck/pybble',
-  'download_url': 'https://github.com/viditeck/pybble/tarball/0.1.2',
+  'download_url': 'https://github.com/viditeck/pybble/tarball/0.1.3',
   'keywords': ['rubble', 'logic language', 'api'],
   'author': 'Emlyn Clay',
   'author_email': 'emlyn@viditeck.com',
@@ -174,7 +174,7 @@ class RubbleREST:
             alias to select the channel to call to. Not both.
             """)
 
-        params = params.update(kwargs)
+        params.update(kwargs)
 
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'call')
@@ -249,7 +249,7 @@ class RubbleREST:
         if 'pid' in kwargs:
             params['channel'] = 'pid(%d)' % kwargs['channel']
 
-        params = params.update(kwargs)
+        params.update(kwargs)
 
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'send')
@@ -427,7 +427,7 @@ class RubbleREST:
         }
 
         # add kwargs as params to the payload
-        params = params.update(kwargs)
+        params.update(kwargs)
 
         # join the api url to the method call
         url = urljoin(self.config['api_url'], 'process')
@@ -761,3 +761,14 @@ class RubbleREST:
                                         request.reason),
                   file=sys.stderr)
             return request
+
+
+    def process(self, pid, prettyprint=False):
+        """
+        Retrieves a process.
+        :param pid:
+        :param prettyprint:
+        :return:
+        """
+
+        
