@@ -16,7 +16,7 @@ setup_params = {
   'version': '0.1.3',
   'description': """A python API to the Rubble programming
                  language over HTTP using the Rubble REST API.""",
-  'url': 'https: //github.com/viditeck/pybble',
+  'url': 'https://github.com/viditeck/pybble',
   'download_url': 'https://github.com/viditeck/pybble/tarball/0.1.3',
   'keywords': ['rubble', 'logic language', 'api'],
   'author': 'Emlyn Clay',
