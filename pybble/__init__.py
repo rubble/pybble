@@ -164,7 +164,7 @@ class RubbleREST:
         if 'wrap_input_from' in kwargs:
             params['wrap-input-from'] = kwargs['wrap_input_from']
             del kwargs['wrap_input_from']
-        
+
         if 'pid' in kwargs:
             params['channel'] = 'pid(%d)' % kwargs['pid']
             del kwargs['pid']
@@ -245,7 +245,7 @@ class RubbleREST:
 
             kwargs['when'] = self.datetime_to_epoch(kwargs['when'])
             params['when'] = kwargs['when']
-        
+
         if 'pid' in kwargs:
             params['channel'] = 'pid(%d)' % kwargs['channel']
 
@@ -763,12 +763,139 @@ class RubbleREST:
             return request
 
 
-    def process(self, pid, prettyprint=False):
+    def translate_babylon(self, string, macro_file, **kwargs):
         """
-        Retrieves a process.
-        :param pid:
-        :param prettyprint:
+        Match a given string against a babylon macro file and in return receive the
+        Rubble code, associated with that string. When specifying which macro_file to
+        target, i.e. for babylon/todolist-macros.xml, enter "todolist-macros";
+        don't include the filename suffix or path prefix.
+
+        Query parameters
+
+            debug=DEBUG (optional)
+
+        If debug=1, the generated Rubble code will contain some debugging
+        information in comments before each snippet of generated code. The
+        default value is 0.
+
+        The content-type of the request body must be text/plain. Example:
+
+            Format: babylon/foo.xml
+
+            This could be a babylon rule.
+
+            This could be another babylon rule.
+
+        The Format line is mandatory and specifies the macro file to use for
+        translation, in this case babylon/foo.xml relative to the repository
+        root of the caller's domain. Each babylon rule is then separated from
+        the preceding content via one or more empty lines. Whitespace within a
+        rule will be collapsed into single spaces. Rule content is case
+        insensitive unless the macro file specifies case sensitivity.
+
+        The response always has content-type text/plain. It consists of the
+        translated Rubble code. It is not stored anywhere automatically, this
+        must be done as a separate operation.
+
+        Note: to specify a macro file in some other domain, simply prepend
+        /NAME/ to the Format path, where NAME is the name of the other domain.
+        :param kwargs:
         :return:
         """
+        params = {}
+        params.update(kwargs)
 
-        
+        url = urljoin(self.config['api_url'], 'babylon-translate')
+
+        data = """Format: babylon/{macro_file}.xml
+
+        {string}
+        """.format(macro_file=macro_file, string=string)
+
+        request_kwargs = self.default_request_kwargs.copy()
+        request_kwargs['headers']['content-type'] = "text/plain"
+
+        request = requests.post(url,
+                                data=data,
+                                params=params,
+                                **request_kwargs)
+
+        if not request.ok:
+            print("Error {}: {}".format(request.status_code,
+                                        request.reason),
+                  file=sys.stderr)
+            return request
+
+        if request.text.find("TRANSLATION ERROR") is not -1:
+            print("No template match this input: {}".format(string),
+                  file=sys.stderr)
+
+        return request.text;
+
+
+    def get_file(self, path, **kwargs):
+        """
+        Path parameters
+
+        PATH
+
+            The file's path relative to the root folder of your domain.
+
+        Returns the content of the file at PATH. The content-type is always text/plain.
+
+        :param path:
+        :return:
+        """
+        params = {}
+        params.update(kwargs)
+
+        url = urljoin(self.config['api_url'], 'file/' + path)
+        request = requests.get(url,
+                               params=params,
+                               **self.default_request_kwargs)
+
+        if request.ok:
+            return request.text
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                        request.reason),
+                  file=sys.stderr)
+            return request
+
+
+    def put_file(self, path, data, **kwargs):
+        """
+        Path parameters
+
+            PATH
+
+        The file's path relative to the root folder of your domain.
+
+        Stores new content in the file at PATH. The content-type of the request
+        body must be application/octet-stream. The MIME-type of the repository
+        file stays the same as it was before. Note: this method is sometimes
+        more useful than WebDAV PUT since it bypasses WebDAV locking, which can
+        sometimes get stuck for certain clients.
+
+        :param path:
+        :return:
+        """
+        params = {}
+        params.update(kwargs)
+
+        request_kwargs = self.default_request_kwargs.copy()
+        request_kwargs['headers']['content-type'] = 'application/octet-stream'
+
+        url = urljoin(self.config['api_url'], 'file/' + path)
+        request = requests.put(url,
+                               data=data,
+                               params=params,
+                               **request_kwargs)
+
+        if request.ok:
+            return True
+        else:
+            print("Error {}: {}".format(request.status_code,
+                                        request.reason),
+                  file=sys.stderr)
+            return request
