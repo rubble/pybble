@@ -13,7 +13,7 @@ from urllib.parse import urljoin
 setup_params = {
   'name': 'pybble',
   'packages': ['pybble'],
-  'version': '0.1.3',
+  'version': '0.1.4',
   'description': """A python API to the Rubble programming
                  language over HTTP using the Rubble REST API.""",
   'url': 'https://github.com/viditeck/pybble',
