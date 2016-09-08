@@ -25,6 +25,16 @@ setup_params = {
   'install_requires': ["requests"]
 }
 
+def error_string_from_request(request):
+    return "{status_code} {reason}".format(
+        status_code=request.status_code,
+        reason=request.reason,
+    )
+
+
+class RubbleServerException(Exception):
+    pass
+
 
 class RubbleREST:
     """The Rubble web services use HTTP Basic authentication for
@@ -187,10 +197,7 @@ class RubbleREST:
         if request.ok:
             return request.json()
         else:
-            print("Error {}: {}".format(request.status_code,
-                                               request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
     def send(self, terms, pid, **kwargs):
         """Sends a message consisting of JSON-encoded Herbrand terms to the
@@ -262,10 +269,7 @@ class RubbleREST:
         if request.ok:
             return request.json()
         else:
-            print("Error {}: {}".format(request.status_code,
-                                               request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
     def domain_info(self):
         """Returns a JSON object that contains some information about the
@@ -284,10 +288,7 @@ class RubbleREST:
         if request.ok:
             return request.json()
         else:
-            print("Error {}: {}".format(request.status_code,
-                                               request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
     # todo: format to numpy docstring
     def get_process(self, pid, prettyprint=True, **kwargs):
@@ -439,10 +440,7 @@ class RubbleREST:
         if request.ok:
             return request.json()
         else:
-            print("Error {}: {}".format(request.status_code,
-                                               request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
     def create_process(self, rulesref, **kwargs):
         """
@@ -524,10 +522,7 @@ class RubbleREST:
         if request.ok:
             return request.json()
         else:
-            print("Error {}: {}".format(request.status_code,
-                                        request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
     # todo: format docstring to numpy
     def update_process(self, rulesref, pid, **kwargs):
@@ -590,10 +585,7 @@ class RubbleREST:
         if request.ok:
             return request.json()
         else:
-            print("Error {}: {}".format(request.status_code,
-                                        request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
     # todo: format to numpy conventions
     def delete_process(self, pid):
@@ -622,10 +614,7 @@ class RubbleREST:
         if request.ok:
             return request.json()
         else:
-            print("Error {}: {}".format(request.status_code,
-                                        request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
     # todo: format to numpy conventions
     def list_processes(self):
@@ -667,10 +656,7 @@ class RubbleREST:
         if request.ok:
             return request.json()
         else:
-            print("Error {}: {}".format(request.status_code,
-                                        request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
     # todo: format to numpy conventions
     def update_channel(self, channel, pid):
@@ -713,10 +699,7 @@ class RubbleREST:
         if request.ok:
             return request.json()
         else:
-            print("Error {}: {}".format(request.status_code,
-                                        request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
     # todo: format according to numpy docstring conventions
     def list_channels(self, **kwargs):
@@ -757,10 +740,7 @@ class RubbleREST:
         if request.ok:
             return request.json()
         else:
-            print("Error {}: {}".format(request.status_code,
-                                        request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
 
     def translate_babylon(self, string, macro_file, **kwargs):
@@ -821,10 +801,7 @@ class RubbleREST:
                                 **request_kwargs)
 
         if not request.ok:
-            print("Error {}: {}".format(request.status_code,
-                                        request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
         if request.text.find("TRANSLATION ERROR") is not -1:
             print("No template match this input: {}".format(string),
@@ -857,10 +834,7 @@ class RubbleREST:
         if request.ok:
             return request.text
         else:
-            print("Error {}: {}".format(request.status_code,
-                                        request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
 
 
     def put_file(self, path, data, **kwargs):
@@ -895,7 +869,5 @@ class RubbleREST:
         if request.ok:
             return True
         else:
-            print("Error {}: {}".format(request.status_code,
-                                        request.reason),
-                  file=sys.stderr)
-            return request
+            raise RubbleServerException(error_string_from_request(request))
+
