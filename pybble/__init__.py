@@ -10,17 +10,19 @@ import requests
 import sys
 from urllib.parse import urljoin
 
+version = '0.1.5'
+
 setup_params = {
   'name': 'pybble',
   'packages': ['pybble'],
-  'version': '0.1.4',
+  'version': version,
   'description': """A python API to the Rubble programming
                  language over HTTP using the Rubble REST API.""",
   'url': 'https://github.com/viditeck/pybble',
-  'download_url': 'https://github.com/viditeck/pybble/tarball/0.1.3',
+  'download_url': 'https://github.com/viditeck/pybble/tarball/%s' % version,
   'keywords': ['rubble', 'logic language', 'api'],
   'author': 'Emlyn Clay',
-  'author_email': 'emlyn@viditeck.com',
+  'author_email': 'emlyn@rubble.tech',
   'license': 'MIT',
   'install_requires': ["requests"]
 }
