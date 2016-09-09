@@ -9,6 +9,7 @@ import datetime
 import requests
 import sys
 from urllib.parse import urljoin
+import copy
 
 version = '0.1.5'
 
@@ -189,11 +190,10 @@ class RubbleREST:
         params.update(kwargs)
 
         # join the api url to the method call
-        url = urljoin(self.config['api_url'], 'call')
+        url = urljoin(self.config['api_url'], 'call?channel={channel}'.format(**params) , True)
 
         request = requests.post(url,
                       json=terms,
-                      params=params,
                       **self.default_request_kwargs)
 
         if request.ok:
@@ -794,7 +794,7 @@ class RubbleREST:
         {string}
         """.format(macro_file=macro_file, string=string)
 
-        request_kwargs = self.default_request_kwargs.copy()
+        request_kwargs = copy.deepcopy(self.default_request_kwargs)
         request_kwargs['headers']['content-type'] = "text/plain"
 
         request = requests.post(url,
@@ -859,7 +859,7 @@ class RubbleREST:
         params = {}
         params.update(kwargs)
 
-        request_kwargs = self.default_request_kwargs.copy()
+        request_kwargs = copy.deepcopy(self.default_request_kwargs)
         request_kwargs['headers']['content-type'] = 'application/octet-stream'
 
         url = urljoin(self.config['api_url'], 'file/' + path)
