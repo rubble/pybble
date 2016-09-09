@@ -11,7 +11,7 @@ import sys
 from urllib.parse import urljoin
 import copy
 
-version = '0.1.5'
+version = '0.1.6'
 
 setup_params = {
   'name': 'pybble',
