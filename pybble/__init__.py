@@ -28,6 +28,7 @@ setup_params = {
   'install_requires': ["requests"]
 }
 
+
 def error_string_from_request(request):
     return "{status_code} {reason}".format(
         status_code=request.status_code,
@@ -811,7 +812,6 @@ class RubbleREST:
 
         return request.text;
 
-
     def get_file(self, path, **kwargs):
         """
         Path parameters
@@ -837,7 +837,6 @@ class RubbleREST:
             return request.text
         else:
             raise RubbleServerException(error_string_from_request(request))
-
 
     def put_file(self, path, data, **kwargs):
         """
