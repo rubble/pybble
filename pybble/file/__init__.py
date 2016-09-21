@@ -12,7 +12,7 @@ class RubbleFile:
         self.config = config
         self.PROTOCOL_PREFIX = "file:/"
 
-    def get(self, path, **kwargs):
+    def read(self, path, **kwargs):
         """
         Path parameters
 
@@ -20,7 +20,8 @@ class RubbleFile:
 
             The file's path relative to the root folder of your domain.
 
-        Returns the content of the file at PATH. The content-type is always text/plain.
+        Returns the _either_ the contents of the file. The content-type
+        is always text/plain.
 
         :param path:
         :return:
@@ -35,11 +36,25 @@ class RubbleFile:
                                **self.config['default_request_kwargs'])
 
         if request.ok:
-            return request.text
+
+            try:
+                request.text.index('Contents of folder')
+                resources_type = 'folder'
+            except ValueError as e:
+                resources_type = 'file'
+
+            if resources_type is 'file':
+                return request.text
+            else:
+                raise ValueError(
+                    ("The path you've requested was a folder "
+                     "not a file. Use RubbleFile.list(path) or "
+                     "Client.file.list(path) instead")
+                )
         else:
             raise RubbleServerException(error_string_from_request(request))
 
-    def put(self, path, data, **kwargs):
+    def write(self, path, data, **kwargs):
         """
         Path parameters
 
