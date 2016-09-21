@@ -40,7 +40,7 @@ class RubbleFile:
             try:
                 request.text.index('Contents of folder')
                 resources_type = 'folder'
-            except ValueError as e:
+            except ValueError:
                 resources_type = 'file'
 
             if resources_type is 'file':
@@ -53,6 +53,46 @@ class RubbleFile:
                 )
         else:
             raise RubbleServerException(error_string_from_request(request))
+
+    def list(self, path, **kwargs):
+        """
+        Supply a folder path relative to your domain's home directory and it
+        will return a list of files.
+        :param path:
+        :param kwargs:
+        :return:
+        """
+        params = {}
+        params.update(kwargs)
+
+        url = urljoin(self.config['url']['api'], 'file/' + path)
+        request = requests.get(url,
+                               auth=self.auth,
+                               params=params,
+                               **self.config['default_request_kwargs'])
+
+        if request.ok:
+
+            try:
+                request.text.index('Contents of folder')
+                resources_type = 'folder'
+            except ValueError:
+                resources_type = 'file'
+
+            if resources_type is 'folder':
+                # Return the multiline folder string as a list, remove the
+                # first and last line. The first contains metadata
+                # '# Contents of folder:' and the last is a blank line.
+                return request.text.split('\r\n')[1:-1]
+            else:
+                raise ValueError(
+                    ("The path you've requested was a file "
+                     "not a folder. Use RubbleFile.list(path) or "
+                     "Client.file.list(path) instead")
+                )
+        else:
+            raise RubbleServerException(error_string_from_request(request))
+
 
     def write(self, path, data, **kwargs):
         """
