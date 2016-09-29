@@ -17,5 +17,7 @@ setup_params = {
   'author': 'Emlyn Clay',
   'author_email': 'emlyn@rubble.tech',
   'license': 'MIT',
-  'install_requires': ["requests"]
+  'install_requires': ["requests"],
+  'test_suite': 'nose.collector',
+  'tests_require': ['nose'],
 }
