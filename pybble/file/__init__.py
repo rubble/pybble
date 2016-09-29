@@ -93,7 +93,6 @@ class RubbleFile:
         else:
             raise RubbleServerException(error_string_from_request(request))
 
-
     def write(self, path, data, **kwargs):
         """
         Path parameters
@@ -126,5 +125,32 @@ class RubbleFile:
 
         if request.ok:
             return True
+        else:
+            raise RubbleServerException(error_string_from_request(request))
+
+    def delete(self, path, **kwargs):
+        """
+        Delete the file at the given path
+
+        Path parameters
+
+        PATH
+
+            The file's path relative to the root folder of your domain.
+
+        :param path:
+        :return:
+        """
+        params = {}
+        params.update(kwargs)
+
+        url = urljoin(self.config['url']['api'], 'file/' + path)
+        request = requests.delete(url,
+                               auth=self.auth,
+                               params=params,
+                               **self.config['default_request_kwargs'])
+
+        if request.ok:
+                return request
         else:
             raise RubbleServerException(error_string_from_request(request))
